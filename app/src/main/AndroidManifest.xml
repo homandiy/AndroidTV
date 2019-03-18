@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.huang.homan.androidtv">
+
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="true" />
+
+    <uses-feature  android:name="android.hardware.fingerprint"  android:required="false" />
+    <uses-feature  android:name="android.hardware.biometrics"  android:required="false" />
+    <uses-feature  android:name="android.hardware.camera2"  android:required="false" />
+    <uses-feature  android:name="android.hardware.Sensor"  android:required="false" />
+    <uses-feature  android:name="android.hardware.GeomagneticField"  android:required="false" />
+
+
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:name="com.huang.homan.androidtv.Dagger.Application.MyApp"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        tools:ignore="AllowBackup,GoogleAppIndexingWarning,InnerclassSeparator">
+        <activity
+            android:name=".View.Activity.MainActivity"
+            android:banner="@drawable/company_logo"
+            android:icon="@drawable/company_logo"
+            android:label="@string/app_name"
+            android:logo="@drawable/company_logo"
+            android:screenOrientation="landscape">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".View.Activity.DetailsActivity" />
+        <activity android:name=".View.Activity.PlaybackActivity" />
+        <activity android:name=".View.Activity.BrowseErrorActivity" />
+    </application>
+
+</manifest>
