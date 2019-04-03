@@ -10,18 +10,30 @@
         android:name="android.software.leanback"
         android:required="true" />
 
-    <uses-feature  android:name="android.hardware.fingerprint"  android:required="false" />
-    <uses-feature  android:name="android.hardware.biometrics"  android:required="false" />
-    <uses-feature  android:name="android.hardware.camera2"  android:required="false" />
-    <uses-feature  android:name="android.hardware.Sensor"  android:required="false" />
-    <uses-feature  android:name="android.hardware.GeomagneticField"  android:required="false" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
 
-
+    <uses-feature
+        android:name="android.hardware.fingerprint"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.biometrics"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera2"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.Sensor"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.GeomagneticField"
+        android:required="false" />
 
     <application
+        android:name=".Dagger.Application.MyApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:name="com.huang.homan.androidtv.Dagger.Application.MyApp"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"

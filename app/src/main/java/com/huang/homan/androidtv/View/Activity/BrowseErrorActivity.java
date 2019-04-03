@@ -33,7 +33,7 @@ import com.huang.homan.androidtv.View.Fragment.ErrorFragment;
 import javax.inject.Inject;
 
 /*
- * BrowseErrorActivity shows how to use ErrorFragment
+ * BrowseErrorActivity shows how to use YouTubeErrorFragment
  */
 public class BrowseErrorActivity extends Activity {
     /* Log tag and shortcut */

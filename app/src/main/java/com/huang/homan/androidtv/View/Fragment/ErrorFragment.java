@@ -21,10 +21,10 @@ import android.view.View;
 import com.huang.homan.androidtv.R;
 
 /*
- * This class demonstrates how to extend ErrorFragment
+ * This class demonstrates how to extend YouTubeErrorFragment
  */
 public class ErrorFragment extends androidx.leanback.app.ErrorFragment {
-    private static final String TAG = "ErrorFragment";
+    private static final String TAG = "YouTubeErrorFragment";
     private static final boolean TRANSLUCENT = true;
 
     @Override

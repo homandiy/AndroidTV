@@ -17,7 +17,11 @@ package com.huang.homan.androidtv.View.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.leanback.app.DetailsFragment;
 import androidx.leanback.app.DetailsFragmentBackgroundController;
 import androidx.leanback.widget.Action;
@@ -41,9 +45,8 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.drawable.GlideDrawable;
-import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.transition.Transition;
 import com.huang.homan.androidtv.Presenter.CardPresenter;
 import com.huang.homan.androidtv.Presenter.DetailsDescriptionPresenter;
 import com.huang.homan.androidtv.Data.Movie;
@@ -106,15 +109,16 @@ public class VideoDetailsFragment extends DetailsFragment {
     private void initializeBackground(Movie data) {
         mDetailsBackground.enableParallax();
         Glide.with(getActivity())
-                .load(data.getBackgroundImageUrl())
                 .asBitmap()
+                .load(data.getBackgroundImageUrl())
                 .centerCrop()
                 .error(R.drawable.default_background)
                 .into(new SimpleTarget<Bitmap>() {
                     @Override
-                    public void onResourceReady(Bitmap bitmap,
-                                                GlideAnimation<? super Bitmap> glideAnimation) {
-                        mDetailsBackground.setCoverBitmap(bitmap);
+                    public void onResourceReady(
+                            @NonNull Bitmap resource,
+                            @Nullable Transition<? super Bitmap> transition) {
+                        mDetailsBackground.setCoverBitmap(resource);
                         mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size());
                     }
                 });
@@ -131,11 +135,11 @@ public class VideoDetailsFragment extends DetailsFragment {
                 .load(mSelectedMovie.getCardImageUrl())
                 .centerCrop()
                 .error(R.drawable.default_background)
-                .into(new SimpleTarget<GlideDrawable>(width, height) {
+                .into(new SimpleTarget<Drawable>(width, height) {
                     @Override
-                    public void onResourceReady(GlideDrawable resource,
-                                                GlideAnimation<? super GlideDrawable>
-                                                        glideAnimation) {
+                    public void onResourceReady(
+                            @NonNull Drawable resource,
+                            @Nullable Transition<? super Drawable> transition) {
                         Log.d(TAG, "details overview card image url ready: " + resource);
                         row.setImageDrawable(resource);
                         mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size());

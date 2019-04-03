@@ -15,6 +15,7 @@
 package com.huang.homan.androidtv.View.Fragment;
 
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -22,6 +23,8 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.content.ContextCompat;
 import androidx.leanback.app.BackgroundManager;
@@ -33,6 +36,7 @@ import androidx.leanback.widget.ListRowPresenter;
 import androidx.leanback.widget.OnItemViewClickedListener;
 import androidx.leanback.widget.OnItemViewSelectedListener;
 import androidx.leanback.widget.Presenter;
+import androidx.leanback.widget.PresenterSelector;
 import androidx.leanback.widget.Row;
 import androidx.leanback.widget.RowPresenter;
 import dagger.android.AndroidInjection;
@@ -45,17 +49,25 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.drawable.GlideDrawable;
-import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.transition.Transition;
+import com.huang.homan.androidtv.Dagger.Scope.ActivityDependency;
+import com.huang.homan.androidtv.Dagger.Scope.AdapterGridRow;
+import com.huang.homan.androidtv.Dagger.Scope.AdapterListRow;
+import com.huang.homan.androidtv.Dagger.Scope.AdapterRow;
+import com.huang.homan.androidtv.Dagger.Scope.AppDependency;
+import com.huang.homan.androidtv.Dagger.Scope.FragmentDependency;
 import com.huang.homan.androidtv.Data.Movie;
 import com.huang.homan.androidtv.Data.MovieList;
 import com.huang.homan.androidtv.Data.MyHeaderList;
 import com.huang.homan.androidtv.Model.HeaderItemModel;
-import com.huang.homan.androidtv.Presenter.CardPresenter;
+import com.huang.homan.androidtv.Model.NetworkApi;
+import com.huang.homan.androidtv.Presenter.MsgPresenter;
+import com.huang.homan.androidtv.Presenter.MyHeaderItemPresenter;
 import com.huang.homan.androidtv.R;
 import com.huang.homan.androidtv.View.Activity.BrowseErrorActivity;
 import com.huang.homan.androidtv.View.Activity.DetailsActivity;
+import com.huang.homan.androidtv.View.Activity.MainActivity;
 
 import java.util.Collections;
 import java.util.List;
@@ -63,10 +75,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 public class MainFragment extends BrowseFragment {
     /* Log tag and shortcut */
-    final static String TAG = "MYLOG MainFragment";
+    final static String TAG = "MYLOG "+ MainFragment.class.getSimpleName();
     public static void ltag(String message) { Log.i(TAG, message); }
 
     private static final int BACKGROUND_UPDATE_DELAY = 300;
@@ -77,44 +90,39 @@ public class MainFragment extends BrowseFragment {
 
     private final Handler mHandler = new Handler();
 
-    @Inject
-    Drawable mDefaultBackground;
-
-    @Inject
-    BackgroundManager mBackgroundManager;
-
-    @Inject
-    DisplayMetrics mMetrics;
-
     private Timer mBackgroundTimer;
     private String mBackgroundUri;
 
+    MsgPresenter presenter;
 
     @Override
     public void onAttach(Context context) {
+        ltag("onAttach");
 
-        //AndroidInjection.inject(this);
+        AndroidInjection.inject(this);
 
         super.onAttach(context);
-
-
     }
+
+    @Inject
+    NetworkApi networkApi;
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
+        Log.i(TAG, "onActivityCreated");
         super.onActivityCreated(savedInstanceState);
 
-        Log.i(TAG, "onActivityCreated");
-        prepareBackgroundManager();
+        presenter = ((MainActivity)getActivity()).getPresenter();
 
-        if (mBackgroundManager != null) {
-            ltag("BackgroundManager: "+mBackgroundManager.toString());
-        }
+        // Test DI on fragment
+        boolean injected = networkApi != null;
+        ltag(
+                TAG+":\nDependency injection\nworked? " +
+                        String.valueOf(injected));
+
 
         setupUIElements();
-
         loadRows();
-
         setupEventListeners();
     }
 
@@ -127,11 +135,20 @@ public class MainFragment extends BrowseFragment {
         }
     }
 
+    @Inject
+    @AdapterRow
+    ArrayObjectAdapter rowsAdapter;
+
+    @Inject
+    @AdapterListRow
+    ArrayObjectAdapter listRowAdapter;
+
+    @Inject
+    @AdapterGridRow
+    ArrayObjectAdapter gridRowAdapter;
+
     private void loadRows() {
         List<Movie> list = MovieList.setupMovies();
-
-        ArrayObjectAdapter rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
-        CardPresenter cardPresenter = new CardPresenter();
 
         int i;
         String[] myHeader = MyHeaderList.HEADER_CATEGORY;
@@ -140,7 +157,7 @@ public class MainFragment extends BrowseFragment {
             if (i != 0) {
                 Collections.shuffle(list);
             }
-            ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+
             for (int j = 0; j < NUM_COLS; j++) {
                 listRowAdapter.add(list.get(j % 5));
             }
@@ -150,12 +167,12 @@ public class MainFragment extends BrowseFragment {
                     MyHeaderList.HEADER_CATEGORY[i],
                     R.drawable.header_icon);
             rowsAdapter.add(new ListRow(header, listRowAdapter));
+
         }
 
-        HeaderItemModel gridHeader = new HeaderItemModel(i, "PREFERENCES");
+        HeaderItemModel gridHeader =
+                new HeaderItemModel(i, "PREFERENCES");
 
-        GridItemPresenter mGridPresenter = new GridItemPresenter();
-        ArrayObjectAdapter gridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
         gridRowAdapter.add(getResources().getString(R.string.grid_view));
         gridRowAdapter.add(getString(R.string.error_fragment));
         gridRowAdapter.add(getResources().getString(R.string.personal_settings));
@@ -164,19 +181,32 @@ public class MainFragment extends BrowseFragment {
         setAdapter(rowsAdapter);
     }
 
-    private void prepareBackgroundManager() {
-
-        mBackgroundManager = BackgroundManager.getInstance(getActivity());
-        mBackgroundManager.attach(getActivity().getWindow());
-
-        mDefaultBackground = ContextCompat.getDrawable(getActivity(), R.drawable.default_background);
-        mMetrics = new DisplayMetrics();
-        getActivity().getWindowManager().getDefaultDisplay().getMetrics(mMetrics);
+    // Get new fragment
+    public static MainFragment newInstance() {
+        return new MainFragment();
     }
 
+    @Inject
+    AppDependency appDependency; // same object from App
+
+    @Inject
+    ActivityDependency activityDependency; // same object from MainActivity
+
+    @Inject
+    FragmentDependency fragmentDependency;
+
+    @Inject
+    BackgroundManager mBackgroundManager;
+
+    @Inject
+    DisplayMetrics mMetrics;
+
+    @Inject
+    Drawable mDefaultBackground;
+
     private void setupUIElements() {
-        // setBadgeDrawable(getActivity().getResources().getDrawable(
-        // R.drawable.videos_by_google_banner));
+        setBadgeDrawable(getActivity().getResources().getDrawable(
+                R.drawable.company_logo));
         setTitle(getString(R.string.browse_title)); // Badge, when set, takes precedent
         // over title
         setHeadersState(HEADERS_ENABLED);
@@ -186,6 +216,14 @@ public class MainFragment extends BrowseFragment {
         setBrandColor(ContextCompat.getColor(getActivity(), R.color.my_header_background));
         // set search icon color
         setSearchAffordanceColor(ContextCompat.getColor(getActivity(), R.color.search_opaque));
+
+        // customize header
+        setHeaderPresenterSelector(new PresenterSelector() {
+            @Override
+            public Presenter getPresenter(Object item) {
+                return new MyHeaderItemPresenter();
+            }
+        });
     }
 
     private void setupEventListeners() {
@@ -193,7 +231,8 @@ public class MainFragment extends BrowseFragment {
 
             @Override
             public void onClick(View view) {
-                Toast.makeText(getActivity(), "Implement your own in-app search", Toast.LENGTH_LONG)
+                Toast.makeText(getActivity(),
+                        "Implement your own in-app search", Toast.LENGTH_LONG)
                         .show();
             }
         });
@@ -209,11 +248,11 @@ public class MainFragment extends BrowseFragment {
                 .load(uri)
                 .centerCrop()
                 .error(mDefaultBackground)
-                .into(new SimpleTarget<GlideDrawable>(width, height) {
+                .into(new SimpleTarget<Drawable>(width, height) {
                     @Override
-                    public void onResourceReady(GlideDrawable resource,
-                                                GlideAnimation<? super GlideDrawable>
-                                                        glideAnimation) {
+                    public void onResourceReady(
+                            @NonNull Drawable resource,
+                            @Nullable Transition<? super Drawable> transition) {
                         mBackgroundManager.setDrawable(resource);
                     }
                 });
@@ -263,6 +302,7 @@ public class MainFragment extends BrowseFragment {
                 Object item,
                 RowPresenter.ViewHolder rowViewHolder,
                 Row row) {
+
             if (item instanceof Movie) {
                 mBackgroundUri = ((Movie) item).getBackgroundImageUrl();
                 startBackgroundTimer();
@@ -283,7 +323,16 @@ public class MainFragment extends BrowseFragment {
         }
     }
 
-    private class GridItemPresenter extends Presenter {
+    public static class GridItemPresenter extends Presenter {
+
+        Activity activity;
+
+        public static GridItemPresenter newInstance(Activity activity) {
+            GridItemPresenter gridItemPresenter = new GridItemPresenter();
+            gridItemPresenter.activity = activity;
+            return gridItemPresenter;
+        }
+
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent) {
             TextView view = new TextView(parent.getContext());
@@ -291,7 +340,7 @@ public class MainFragment extends BrowseFragment {
             view.setFocusable(true);
             view.setFocusableInTouchMode(true);
             view.setBackgroundColor(
-                    ContextCompat.getColor(getActivity(), R.color.default_background));
+                    ContextCompat.getColor(activity, R.color.default_background));
             view.setTextColor(Color.WHITE);
             view.setGravity(Gravity.CENTER);
             return new ViewHolder(view);
