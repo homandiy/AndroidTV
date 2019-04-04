@@ -1,6 +1,9 @@
 package com.huang.homan.androidtv.View.Fragment;
 
 import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.Instrumentation;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -10,6 +13,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.util.Log;
 
+import com.huang.homan.androidtv.Dagger.Application.MyApp;
 import com.huang.homan.androidtv.Data.MyHeaderList;
 import com.huang.homan.androidtv.View.Activity.MainActivity;
 
@@ -22,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import androidx.annotation.Nullable;
-import androidx.test.InstrumentationRegistry;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 import androidx.test.uiautomator.By;
 import androidx.test.uiautomator.Direction;
@@ -60,6 +64,8 @@ public class MainFragmentUiaTest {
 
     private UiDevice mTV; // this Android TV
     private PackageManager packageManager;
+    private Context context;
+    private Activity activity;
 
     @Before
     public void startMainActivityFromHomeScreen() {
@@ -77,7 +83,7 @@ public class MainFragmentUiaTest {
                 LAUNCH_TIMEOUT);
 
         // Launch the blueprint app
-        Context context = getApplicationContext();
+        context = getApplicationContext();
         assertThat(context, notNullValue());
 
         packageManager = context.getPackageManager();
@@ -88,6 +94,11 @@ public class MainFragmentUiaTest {
                 .getLaunchIntentForPackage(PackageName);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);    // Clear out any previous instances
         */
+
+        Instrumentation inst = InstrumentationRegistry.getInstrumentation();
+        Instrumentation.ActivityMonitor monitor =
+                inst.addMonitor("com.huang.homan.androidtv.View.Activity.MainActivity", null, false);
+
         Intent intent = new Intent();
         intent.setComponent(new ComponentName(
                 PackageName,
@@ -99,6 +110,7 @@ public class MainFragmentUiaTest {
 
         // Wait for the app to appear
         mTV.wait(Until.hasObject(By.pkg(PackageName).depth(0)), LAUNCH_TIMEOUT);
+        activity = monitor.waitForActivityWithTimeout(LAUNCH_TIMEOUT);
 
     }
 
@@ -128,11 +140,27 @@ public class MainFragmentUiaTest {
     public void moveToAllObj() throws UiObjectNotFoundException {
         checkPreconditions();
 
+        MainFragment mainFragment = (MainFragment) getVisibleFragment();
+        assertThat(mainFragment, notNullValue());
+
         for (int i=0; i<MyHeaderList.HEADER_CATEGORY.length; i++) {
             pressDpad(RIGHT);
-            trySomeItems(3);
+            //trySomeItems(3);
+            trySomeItems(mainFragment.getNumCols());
             pressDpad(DOWN);
         }
+    }
+
+    private Fragment getVisibleFragment() {
+        FragmentManager fragmentManager = activity.getFragmentManager();
+        List<Fragment> fragments = fragmentManager.getFragments();
+        if(fragments != null){
+            for(Fragment fragment : fragments){
+                if(fragment != null && fragment.isVisible())
+                    return fragment;
+            }
+        }
+        return null;
     }
 
     public void trySomeItems(int count) throws UiObjectNotFoundException {
